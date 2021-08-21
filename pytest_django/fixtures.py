@@ -39,6 +39,8 @@ __all__ = [
     "django_assert_num_queries",
     "django_assert_max_num_queries",
     "django_capture_on_commit_callbacks",
+    "_set_suffix_to_test_databases",
+    "_disable_native_migrations",
 ]
 
 
@@ -58,8 +60,9 @@ def django_db_modify_db_settings_xdist_suffix(request) -> None:
 
     xdist_suffix = getattr(request.config, "workerinput", {}).get("workerid")
     if xdist_suffix:
-        # Put a suffix like _gw0, _gw1 etc on xdist processes
-        _set_suffix_to_test_databases(suffix=xdist_suffix)
+        # Put a suffix like _gw?0, _gw?1 etc on xdist processes
+        idx = xdist_suffix.lstrip("gw")
+        _set_suffix_to_test_databases(suffix="gw_{}".format(idx))
 
 
 @pytest.fixture(scope="session")
@@ -105,20 +108,22 @@ def django_db_setup(
     """Top level fixture to ensure test databases are available"""
     from django.test.utils import setup_databases, teardown_databases
 
-    setup_databases_args = {}
-
     if not django_db_use_migrations:
         _disable_native_migrations()
 
-    if django_db_keepdb and not django_db_createdb:
-        setup_databases_args["keepdb"] = True
+    xdist_suffix = getattr(request.config, "workerinput", {}).get("workerid")
+    if not xdist_suffix:
+        setup_databases_args = {}
 
-    with django_db_blocker.unblock():
-        db_cfg = setup_databases(
-            verbosity=request.config.option.verbose,
-            interactive=False,
-            **setup_databases_args
-        )
+        if django_db_keepdb and not django_db_createdb:
+            setup_databases_args["keepdb"] = True
+
+        with django_db_blocker.unblock():
+            db_cfg = setup_databases(
+                verbosity=request.config.option.verbose,
+                interactive=False,
+                **setup_databases_args
+            )
 
     def teardown_database() -> None:
         with django_db_blocker.unblock():

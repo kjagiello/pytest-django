@@ -70,9 +70,9 @@ You can then run the tests by running::
 
 When tests are invoked with xdist, pytest-django will create a separate test
 database for each process. Each test database will be given a suffix
-(something like "gw0", "gw1") to map to a xdist process. If your database name
-is set to "foo", the test database with xdist will be "test_foo_gw0",
-"test_foo_gw1" etc.
+(something like "gw_0", "gw_1") to map to a xdist process. If your database
+name is set to "foo", the test database with xdist will be "test_foo_gw_0",
+"test_foo_gw_1" etc.
 
 See the full documentation on `pytest-xdist
 <https://github.com/pytest-dev/pytest-xdist/blob/master/README.rst>`_ for more

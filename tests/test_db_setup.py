@@ -171,10 +171,10 @@ def test_xdist_with_reuse(django_testdir) -> None:
     pytest.importorskip("xdist")
     skip_if_sqlite_in_memory()
 
-    drop_database("gw0")
-    drop_database("gw1")
-    assert not db_exists("gw0")
-    assert not db_exists("gw1")
+    drop_database("gw_0")
+    drop_database("gw_1")
+    assert not db_exists("gw_0")
+    assert not db_exists("gw_1")
 
     django_testdir.create_test_module(
         """
@@ -185,7 +185,7 @@ def test_xdist_with_reuse(django_testdir) -> None:
         def _check(settings):
             # Make sure that the database name looks correct
             db_name = settings.DATABASES['default']['NAME']
-            assert db_name.endswith('_gw0') or db_name.endswith('_gw1')
+            assert db_name.endswith('_gw_0') or db_name.endswith('_gw_1')
 
             assert Item.objects.count() == 0
             Item.objects.create(name='foo')
@@ -218,8 +218,8 @@ def test_xdist_with_reuse(django_testdir) -> None:
     result.stdout.fnmatch_lines(["*PASSED*test_c*"])
     result.stdout.fnmatch_lines(["*PASSED*test_d*"])
 
-    assert db_exists("gw0")
-    assert db_exists("gw1")
+    assert db_exists("gw_0")
+    assert db_exists("gw_1")
 
     result = django_testdir.runpytest_subprocess("-vv", "-n2", "-s", "--reuse-db")
     assert result.ret == 0
@@ -238,8 +238,8 @@ def test_xdist_with_reuse(django_testdir) -> None:
     result.stdout.fnmatch_lines(["*PASSED*test_d*"])
 
     # Cleanup.
-    drop_database("gw0")
-    drop_database("gw1")
+    drop_database("gw_0")
+    drop_database("gw_1")
 
 
 class TestSqliteWithXdist:

@@ -40,6 +40,8 @@ from .fixtures import async_rf  # noqa
 from .fixtures import rf  # noqa
 from .fixtures import settings  # noqa
 from .fixtures import transactional_db  # noqa
+from .fixtures import _set_suffix_to_test_databases  # noqa
+from .fixtures import _disable_native_migrations  # noqa
 
 from .lazy_django import django_settings_is_configured, skip_if_no_django
 
@@ -356,11 +358,30 @@ def pytest_report_header() -> Optional[List[str]]:
     return None
 
 
+class XDistPlugin:
+    def pytest_xdist_setupnodes(self, config, specs) -> None:
+        """Setups the database on the xdist worker setup."""
+        from django.test.utils import setup_databases
+
+        keepdb = config.getvalue("reuse_db") and not django_db_createdb
+
+        _set_suffix_to_test_databases("gw")
+        with _blocking_manager.unblock():
+            setup_databases(
+                verbosity=config.option.verbose,
+                interactive=False,
+                keepdb=keepdb,
+                parallel=config.getoption("numprocesses"),
+            )
+
+
 @pytest.hookimpl(trylast=True)
-def pytest_configure() -> None:
+def pytest_configure(config) -> None:
     # Allow Django settings to be configured in a user pytest_configure call,
     # but make sure we call django.setup()
     _setup_django()
+    if config.pluginmanager.hasplugin("xdist"):
+        config.pluginmanager.register(XDistPlugin())
 
 
 @pytest.hookimpl(tryfirst=True)
