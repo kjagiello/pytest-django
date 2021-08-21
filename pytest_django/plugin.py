@@ -365,6 +365,7 @@ class XDistPlugin:
 
         keepdb = config.getvalue("reuse_db") and not django_db_createdb
 
+        _setup_django()
         _set_suffix_to_test_databases("gw")
         with _blocking_manager.unblock():
             setup_databases(
